@@ -1,0 +1,116 @@
+import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { getArrSlider } from "../ultis/fn";
+import * as actions from "../store/actions";
+const Slider = () => {
+    const { banner } = useSelector((state) => state.app);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    // animation for banner
+    useEffect(() => {
+        const sliderEls = document.getElementsByClassName("slider-item");
+        let min = 0;
+        let max = 2;
+        const intervalId = setInterval(() => {
+            const list = getArrSlider(min, max, sliderEls.length - 1);
+            for (let i = 0; i < sliderEls.length; i++) {
+                // Delete classnames (css)
+                sliderEls[i]?.classList?.remove(
+                    "animate-slide-right",
+                    "order-last",
+                    "z-20"
+                );
+                sliderEls[i]?.classList?.remove(
+                    "animate-slide-left",
+                    "order-first",
+                    "z-10"
+                );
+                sliderEls[i]?.classList?.remove(
+                    "animate-slide-left2",
+                    "order-2",
+                    "z-10"
+                );
+
+                // Hide or Show images
+                if (list.some((item) => item === i)) {
+                    sliderEls[i].style.cssText = `display: block`;
+                } else {
+                    sliderEls[i].style.cssText = `display: none`;
+                }
+            }
+            // Add animation by adding classnames
+            list.forEach((item) => {
+                if (item === max) {
+                    sliderEls[item]?.classList?.add(
+                        "animate-slide-right",
+                        "order-last",
+                        "z-20"
+                    );
+                } else if (item === min) {
+                    sliderEls[item]?.classList?.add(
+                        "animate-slide-left",
+                        "order-first",
+                        "z-10"
+                    );
+                } else {
+                    sliderEls[item]?.classList?.add(
+                        "animate-slide-left2",
+                        "order-2",
+                        "z-10"
+                    );
+                }
+            });
+            min = min === sliderEls.length - 1 ? 0 : min + 1;
+            max = max === sliderEls.length - 1 ? 0 : max + 1;
+        }, 3000);
+        return () => {
+            intervalId && clearInterval(intervalId);
+        };
+    }, []);
+
+    // Handle Click Banner
+    const handleClickBanner = (item) => {
+        // type album = 4, song = 1
+        if (item?.type === 1) {
+            dispatch(actions.setCurSongId(item.encodeId));
+            dispatch(actions.play(true));
+            dispatch(actions.setPlaylist(null));
+        } else if (item?.type === 4) {
+            const albumPath = item?.link?.split(".")[0];
+            const playlistPath = item?.link?.split(".")[0];
+            navigate(albumPath || playlistPath);
+        } else {
+            dispatch(actions.setPlaylist(null));
+        }
+    };
+
+    return (
+        <div className="mt-[70px] pt-8 flex -mx-[15px]">
+            {banner?.map((item, index) => {
+                return (
+                    <div
+                        key={item.encodeId}
+                        className={`slider-item flex-1 object-contain "w-1/3 px-[15px] rounded-lg ${
+                            index <= 2 ? "block" : "hidden"
+                        }`}
+                    >
+                        <div className="relative pt-[56.25%]">
+                            <figure className="object-cover overflow-hidden">
+                                <img
+                                    src={item.banner}
+                                    alt={item.description}
+                                    className="absolute inset-0 rounded-lg w-full h-full cursor-pointer"
+                                    onClick={() => handleClickBanner(item)}
+                                />
+                            </figure>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+export default Slider;
